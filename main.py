@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-from textwrap import shorten
+from textwrap import shorten, wrap
 from urllib.parse import quote
 
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
-from ulauncher.api.shared.event import KeywordQueryEvent
+from ulauncher.api.shared.event import KeywordQueryEvent, ItemEnterEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.action.CopyToClipboardAction import CopyToClipboardAction
+from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
 from ulauncher.api.shared.action.OpenUrlAction import OpenUrlAction
 
 from dictionary import lookup
@@ -18,7 +19,8 @@ from dictionary import lookup
 ICON = "images/icon.png"
 MAX_RESULTS = 8
 DESC_WIDTH = 100
-WIKTIONARY_URL = "https://en.wiktionary.org/wiki/{word}"
+WRAP_WIDTH = 60
+DICTIONARY_URL = "https://www.merriam-webster.com/dictionary/{word}"
 
 
 def _single(name: str, description: str = "") -> RenderResultListAction:
@@ -27,10 +29,15 @@ def _single(name: str, description: str = "") -> RenderResultListAction:
     )
 
 
+def _browser_action(word: str) -> OpenUrlAction:
+    return OpenUrlAction(DICTIONARY_URL.format(word=quote(word)))
+
+
 class DefineExtension(Extension):
     def __init__(self):
         super().__init__()
         self.subscribe(KeywordQueryEvent, KeywordQueryEventListener())
+        self.subscribe(ItemEnterEvent, ItemEnterEventListener())
 
 
 class KeywordQueryEventListener(EventListener):
@@ -43,13 +50,6 @@ class KeywordQueryEventListener(EventListener):
         if isinstance(result, str):
             return _single(result)
 
-        # Ulauncher's default theme forces every row to one line (ellipsize=middle,
-        # max-width-chars=1), so long definitions get truncated inline. Enter opens
-        # the word in Wiktionary for the full entry; Alt+Enter copies the short
-        # definition to clipboard for power-users who just want the text.
-        url = WIKTIONARY_URL.format(word=quote(word))
-        open_wiktionary = OpenUrlAction(url)
-
         items = []
         for d in result[:MAX_RESULTS]:
             full = f"{word} ({d.part_of_speech}): {d.text}"
@@ -58,11 +58,53 @@ class KeywordQueryEventListener(EventListener):
                     icon=ICON,
                     name=f"{word} — {d.part_of_speech}",
                     description=shorten(d.text, width=DESC_WIDTH, placeholder="…"),
-                    on_enter=open_wiktionary,
-                    on_alt_enter=CopyToClipboardAction(full),
+                    on_enter=ExtensionCustomAction(
+                        {
+                            "word": word,
+                            "pos": d.part_of_speech,
+                            "text": d.text,
+                            "full": full,
+                        },
+                        keep_app_open=True,
+                    ),
+                    on_alt_enter=_browser_action(word),
                 )
             )
         return RenderResultListAction(items)
+
+
+class ItemEnterEventListener(EventListener):
+    """Drill-in view. Ulauncher's default result_item.ui hardcodes ellipsize=middle
+    and max-width-chars=1 on item labels, so long text can't render inline on a
+    single row. We wrap the full definition across multiple rows so it's readable
+    without leaving Ulauncher.
+    """
+
+    def on_event(self, event, extension):
+        data = event.get_data()
+        word = data["word"]
+        full = data["full"]
+        copy = CopyToClipboardAction(full)
+        browser = _browser_action(word)
+
+        header = ExtensionResultItem(
+            icon=ICON,
+            name=f"{word} — {data['pos']}",
+            description="Enter: copy full definition    Alt+Enter: open Merriam-Webster",
+            on_enter=copy,
+            on_alt_enter=browser,
+        )
+        body = [
+            ExtensionResultItem(
+                icon=ICON,
+                name=line,
+                description="",
+                on_enter=copy,
+                on_alt_enter=browser,
+            )
+            for line in wrap(full, width=WRAP_WIDTH)
+        ]
+        return RenderResultListAction([header] + body)
 
 
 if __name__ == "__main__":

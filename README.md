@@ -2,8 +2,9 @@
 
 Ulauncher extension: type `def <word>` to see English definitions inline.
 
-- **Enter** on a result opens the word's [Wiktionary](https://en.wiktionary.org/) page in your browser (full entry: pronunciation, etymology, examples, all senses).
-- **Alt+Enter** copies the short definition to the clipboard.
+- **Enter** on a result drills into that meaning — the full definition is wrapped across multiple rows so you can read it inline (Ulauncher's default theme ellipsizes each row to one line, so this is the only way to surface long definitions inside Ulauncher itself).
+- **Alt+Enter** opens the word's [Merriam-Webster](https://www.merriam-webster.com/) entry in your default browser.
+- In the drill-in view, **Enter** copies the full definition to the clipboard; **Alt+Enter** also opens Merriam-Webster.
 
 ## Install
 
