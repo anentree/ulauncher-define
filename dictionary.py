@@ -11,7 +11,7 @@ from urllib.request import Request, urlopen
 
 API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/{word}"
 TIMEOUT_SECONDS = 6  # live-probe median latency ~3.8s, p95 ~3.87s
-USER_AGENT = "ulauncher-define/0.1 (+https://github.com/neo/ulauncher-define)"
+USER_AGENT = "ulauncher-define/0.1 (+https://github.com/anentree/ulauncher-define)"
 
 
 @dataclass(frozen=True)
