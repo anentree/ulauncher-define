@@ -19,7 +19,11 @@ from dictionary import lookup
 ICON = "images/icon.png"
 MAX_RESULTS = 8
 DESC_WIDTH = 100
-WRAP_WIDTH = 60
+# Visible width of a result-item `name` field is ~32–34 chars in the default
+# Ulauncher theme before GTK middle-ellipsis kicks in (themes can't override
+# the ellipsize/max-width-chars attrs set in result_item.ui). Wrap well under
+# that to guarantee no truncation in the drill-in view.
+WRAP_WIDTH = 32
 DICTIONARY_URL = "https://www.merriam-webster.com/dictionary/{word}"
 
 
@@ -90,7 +94,7 @@ class ItemEnterEventListener(EventListener):
         header = ExtensionResultItem(
             icon=ICON,
             name=f"{word} — {data['pos']}",
-            description="Enter: copy full definition    Alt+Enter: open Merriam-Webster",
+            description="Enter: copy · Alt+Enter: browser",
             on_enter=copy,
             on_alt_enter=browser,
         )
