@@ -94,17 +94,17 @@ class ItemEnterEventListener(EventListener):
         header = ExtensionResultItem(
             icon=ICON,
             name=f"{word} — {data['pos']}",
-            description="Enter: copy · Alt+Enter: browser",
-            on_enter=copy,
-            on_alt_enter=browser,
+            description="Enter: open in browser · Alt+Enter: copy",
+            on_enter=browser,
+            on_alt_enter=copy,
         )
         body = [
             ExtensionResultItem(
                 icon=ICON,
                 name=line,
                 description="",
-                on_enter=copy,
-                on_alt_enter=browser,
+                on_enter=browser,
+                on_alt_enter=copy,
             )
             for line in wrap(full, width=WRAP_WIDTH)
         ]
